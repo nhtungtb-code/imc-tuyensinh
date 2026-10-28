@@ -11,17 +11,15 @@ App là một file HTML duy nhất ([index.html](index.html)), không cần cài
 - Tự lưu trên trình duyệt. Có xuất và nạp file sao lưu (.json).
 - AI (Claude): nhập tự động từ brochure PDF, dán dữ liệu thô vào từng bước, gợi ý SWOT, chân dung, hành trình, thông điệp và mix kênh.
 
-## Cách tải về dùng
+## Dùng ngay trên web
 
-Repo ở chế độ private. Cần được chủ repo mời (nhận email hoặc thông báo từ GitHub, bấm chấp nhận) rồi làm theo:
+Mở: https://nhtungtb-code.github.io/imc-tuyensinh/
 
-1. Mở trang repo, bấm file **index.html**.
-2. Bấm nút **Download raw file** (biểu tượng mũi tên xuống, góc trên bên phải của khung code).
-3. Bấm đúp file `index.html` vừa tải để mở bằng Chrome hoặc Safari.
+Không cần cài đặt. Dữ liệu và API key lưu riêng trên trình duyệt của từng người.
 
-Khi có bản mới, tải lại file `index.html` theo cùng cách. Dữ liệu kế hoạch lưu trong trình duyệt nên không mất khi đổi file, nhưng nên xuất file sao lưu (.json) trước khi cập nhật.
+## Tải về dùng offline
 
-Lưu ý: mở file từ ổ đĩa thì dữ liệu gắn với trình duyệt đã mở. Dùng trình duyệt khác hoặc máy khác thì cần nạp file sao lưu.
+Bấm file **index.html**, chọn **Download raw file**, rồi bấm đúp file đã tải để mở bằng Chrome hoặc Safari. Nên xuất file sao lưu (.json) trước khi thay bằng bản mới.
 
 ## Cách dùng
 
@@ -41,5 +39,5 @@ Lưu ý: mở file từ ổ đĩa thì dữ liệu gắn với trình duyệt đ
 
 ## Ghi chú
 
-- Logo EQuest nhúng trong `index.html` (bản gốc ở `assets/equest-logo.png`). Chỉ chia sẻ repo trong phạm vi được EQuest cho phép.
+- Logo và nhận diện EQuest là tài sản của Tập đoàn EQuest, chỉ dùng cho công cụ nội bộ EQuest. Người ngoài tự thay bằng logo và màu của trường mình khi dùng lại.
 - Số liệu và gợi ý mẫu theo cấp học là tham khảo, cần chỉnh theo thực tế từng trường.
