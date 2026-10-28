@@ -383,7 +383,7 @@ const SKEY='imc-ai-settings';
 const aiSet=()=>{const d={key:'',model:'claude-sonnet-5-5',code:''};try{return Object.assign(d,JSON.parse(localStorage.getItem(SKEY)||'{}'))}catch(e){return d}};
 // Điền địa chỉ máy chủ trung gian (thư mục worker/) để dùng AI của đơn vị, người dùng không cần API key riêng.
 // Để trống thì mỗi người dùng nhập API key của mình.
-const PROXY_URL='';
+const PROXY_URL='https://imc-tuyensinh-ai.nhtungtb-code.workers.dev';
 const PROXY_NEEDS_CODE=true;
 const dlg=document.getElementById('dlg');
 function aiStatus(){
