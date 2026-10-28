@@ -221,7 +221,7 @@ function s1(){
     ${fld(`ctx.comp.${i}.name`,'Tên đối thủ')}${fld(`ctx.comp.${i}.fee`,'Học phí tham khảo')}
     ${fld(`ctx.comp.${i}.web`,'Website','text','https://...')}${fld(`ctx.comp.${i}.fb`,'Fanpage','text','https://facebook.com/...')}
     ${fld(`ctx.comp.${i}.str`,'Điểm mạnh của họ','textarea')}${fld(`ctx.comp.${i}.weak`,'Điểm yếu của họ','textarea')}
-  </div><div class="row" style="margin-top:8px"><span class="spacer"></span><button class="btn sm" data-del="ctx.comp.${i}">Xoá</button></div></div>`).join('');
+  </div>${srcNote(c)}<div class="row" style="margin-top:8px"><button class="btn sm ai" data-enrich="${i}" title="Điền tên, website, fanpage hoặc bất kỳ thông tin nào, AI tìm phần còn lại">🔍 AI tìm thông tin trên web</button><span class="spacer"></span><button class="btn sm" data-del="ctx.comp.${i}">Xoá</button></div></div>`).join('');
   return head('Bối cảnh & đối thủ','SWOT, đối thủ cùng khu vực và định vị thương hiệu.')+todoBox(1)+pasteCard('ctx')+`
 <div class="card"><div class="row" style="margin-bottom:12px"><h3 style="margin:0">SWOT</h3><span class="spacer"></span><button class="btn sm ai" data-ai="swot" title="Chỉ điền vào ô còn trống">✨ AI gợi ý SWOT</button></div><div class="grid">
 ${fld('ctx.s','Điểm mạnh (S)','textarea',SWOT_HINT.s)}${fld('ctx.w','Điểm yếu (W)','textarea',SWOT_HINT.w)}
@@ -316,7 +316,7 @@ function s5(){
 <div class="sec"><h3>2. Bối cảnh & đối thủ</h3>
 <table><tr><th>Điểm mạnh</th><th>Điểm yếu</th></tr><tr><td>${S.ctx.s?esc(S.ctx.s):m(1,'S')}</td><td>${S.ctx.w?esc(S.ctx.w):m(1,'W')}</td></tr>
 <tr><th>Cơ hội</th><th>Thách thức</th></tr><tr><td>${S.ctx.o?esc(S.ctx.o):m(1,'O')}</td><td>${S.ctx.t?esc(S.ctx.t):m(1,'T')}</td></tr></table>
-<h4>Đối thủ</h4>${comp.length?`<table><tr><th>Trường</th><th>Học phí</th><th>Mạnh</th><th>Yếu</th></tr>${comp.map(c=>`<tr><td>${esc(c.name)}${c.web||c.fb?`<br><small>${[c.web,c.fb].filter(Boolean).map(esc).join(' · ')}</small>`:''}</td><td>${esc(c.fee)}</td><td>${esc(c.str)}</td><td>${esc(c.weak)}</td></tr>`).join('')}</table>`:`<p>${m(1,'đối thủ')}</p>`}
+<h4>Đối thủ</h4>${comp.length?`<table><tr><th>Trường</th><th>Học phí</th><th>Mạnh</th><th>Yếu</th></tr>${comp.map(c=>`<tr><td>${esc(c.name)}${c.web||c.fb?`<br><small>${[c.web,c.fb].filter(Boolean).map(esc).join(' · ')}</small>`:''}${c.src?`<br><small>Nguồn AI: ${esc(srcHosts(c.src))}</small>`:''}</td><td>${esc(c.fee)}</td><td>${esc(c.str)}</td><td>${esc(c.weak)}</td></tr>`).join('')}</table>`:`<p>${m(1,'đối thủ')}</p>`}
 <h4>Định vị</h4>${val(S.ctx.pos,1,'định vị')}</div>
 <div class="sec"><h3>3. Chân dung & hành trình</h3>
 ${personas.length?`<table><tr><th>Nhóm</th><th>Muốn</th><th>Lo</th><th>Tìm thông tin</th></tr>${personas.map(x=>`<tr><td><b>${esc(x.name)}</b><br>${esc(x.who)}</td><td>${esc(x.motive)}</td><td>${esc(x.fear)}</td><td>${esc(x.src)}</td></tr>`).join('')}</table>`:`<p>${m(2,'chân dung')}</p>`}
@@ -363,7 +363,8 @@ document.addEventListener('input',e=>{
   updateProgress();
 });
 document.addEventListener('click',e=>{
-  const t=e.target.closest('[data-go],[data-add],[data-del],[data-sug],[data-ai],[data-impgo],[data-impdel],[data-impapply],[data-paste]'); if(!t) return;
+  const t=e.target.closest('[data-go],[data-add],[data-del],[data-sug],[data-ai],[data-impgo],[data-impdel],[data-impapply],[data-paste],[data-enrich]'); if(!t) return;
+  if(t.dataset.enrich!==undefined) return enrichComp(+t.dataset.enrich,t);
   if(t.dataset.paste) return runPaste(t.dataset.paste,t);
   if(t.dataset.ai) return runAI(t.dataset.ai,t);
   if(t.dataset.impgo!==undefined) return startImport();
@@ -491,6 +492,33 @@ document.addEventListener('change',async e=>{
   }catch(err){alert(err.message)}
 });
 
+// ---------- AI tìm thông tin đối thủ trên web ----------
+const srcUrls=t=>String(t||'').split('\n').map(x=>x.trim()).filter(u=>/^https?:\/\//.test(u));
+const srcHosts=t=>[...new Set(srcUrls(t).map(u=>{try{return new URL(u).hostname}catch(e){return ''}}).filter(Boolean))].join(', ');
+const srcNote=c=>srcUrls(c.src).length?`<div class="lead" style="font-size:12px;margin-top:8px">AI tìm trên web, cần kiểm chứng. Nguồn: ${srcUrls(c.src).slice(0,6).map(u=>`<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc((()=>{try{return new URL(u).hostname}catch(e){return u}})())}</a>`).join(' · ')}</div>`:'';
+const COMP_SCHEMA=obj({name:str,web:str,fb:str,fee:str,str:str,weak:str,note:str});
+async function enrichComp(i,btn){
+  const c=S.ctx.comp[i];
+  const known={ten:c.name,website:c.web,fanpage:c.fb,hoc_phi:c.fee,diem_manh:c.str,diem_yeu:c.weak};
+  if(!Object.values(known).some(v=>String(v||'').trim()))return alert('Điền ít nhất một thông tin (tên, website, fanpage, học phí...) để AI có gì để tìm.');
+  const old=btn.textContent;btn.disabled=true;btn.textContent='AI đang tìm trên web… (có thể mất 30-60 giây)';
+  try{
+    const s=aiSet();
+    if(PROXY_URL?(PROXY_NEEDS_CODE&&!s.code):!s.key){openSettings();throw new Error(PROXY_URL?'Chưa nhập mã truy cập AI.':'Chưa có API key. Hãy nhập key trong hộp Cài đặt AI.')}
+    if(!window.aiSearch)throw new Error(window.AI_ERR||'Thư viện Claude chưa tải xong, thử lại sau vài giây (cần có mạng).');
+    const ctx=`Trường chúng tôi: ${S.p.name||'(chưa có tên)'}; cấp học: ${S.level?LEVELS[S.level]:'(chưa chọn)'}; khu vực: ${S.p.area||'(chưa có)'}.`;
+    const prompt=`Tìm trên web thông tin về một trường đối thủ để lập hồ sơ cạnh tranh tuyển sinh.\n${ctx}\n\nThông tin đã biết về đối thủ (có thể chỉ có một mục): ${JSON.stringify(known)}\n\nNếu thông tin đã biết chưa đủ nhận diện trường, dùng tìm kiếm để xác định đúng trường (ưu tiên trường cùng cấp học và khu vực với trường chúng tôi). Cần tìm: tên đầy đủ, website chính thức, fanpage Facebook chính thức, học phí (ghi năm học, mức, nguồn), điểm mạnh nổi bật (chương trình, đội ngũ, cơ sở vật chất, thành tích có số liệu), điểm yếu hoặc khoảng trống chỉ khi có nguồn nói rõ (đánh giá, tin tức). Chỉ ghi điều có trong kết quả tìm kiếm kèm URL nguồn. Không đoán. Thông tin nào không tìm thấy thì ghi "không tìm thấy". Nếu có nhiều trường trùng tên, nêu ra và nói rõ bạn chọn trường nào, vì sao.`;
+    const found=await window.aiSearch({key:s.key,model:s.model,code:s.code,proxy:PROXY_URL,system:SYS,prompt,maxUses:4});
+    const r=await ai(`Từ kết quả nghiên cứu dưới đây, điền hồ sơ đối thủ. Trường: name, web (URL website chính thức), fb (URL fanpage Facebook chính thức), fee (học phí, kèm năm học nếu có), str (điểm mạnh, mỗi ý một dòng bắt đầu bằng "- "), weak (điểm yếu chỉ khi nguồn nêu rõ, mỗi ý ghi nguồn), note (lưu ý về độ chắc chắn: trùng tên, thông tin cũ, không chắc là trường nào; để rỗng nếu không có). Mục nào không tìm thấy thì để chuỗi rỗng. Không thêm thông tin ngoài kết quả.\n\nKẾT QUẢ NGHIÊN CỨU:\n${found.text}`,COMP_SCHEMA);
+    const f=(k,v)=>{if(v&&v.trim()&&!String(c[k]||'').trim())c[k]=v};
+    f('name',r.name);f('web',r.web);f('fb',r.fb);f('fee',r.fee);f('str',r.str);f('weak',r.weak);
+    const urls=found.urls.filter(u=>/^https?:\/\//.test(u)&&!srcUrls(c.src).includes(u));
+    if(urls.length)c.src=(c.src?c.src+'\n':'')+urls.slice(0,8).join('\n');
+    save();render();
+    if(r.note&&r.note.trim())alert('Lưu ý từ AI: '+r.note);
+  }catch(e){alert('Không tìm được: '+e.message);btn.disabled=false;btn.textContent=old}
+}
+
 // ---------- Nhập từ brochure PDF ----------
 let imp={items:[],busy:false};
 const EXTRACT=obj({school_name:strn,level:{anyOf:[{type:'string',enum:['mamnon','tieuhoc','thcs_thpt','daihoc']},{type:'null'}]},area:strn,tuition_vnd_per_year:intn,tuition_note:strn,capacity:intn,strengths:strn,achievements:strn,gaps:strn,not_in_brochure:arr(str)});
@@ -565,23 +593,45 @@ render();
 <script type="module">
 try{
   const {default:Anthropic}=await import('https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@1.3.0/+esm');
-  window.aiJSON=async({key,model,code,proxy,system,content,schema})=>{
-    const client=proxy
-      ?new Anthropic({apiKey:'via-proxy',baseURL:proxy.replace(/\/$/,''),dangerouslyAllowBrowser:true,defaultHeaders:{'x-access-code':code||''}})
-      :new Anthropic({apiKey:key,dangerouslyAllowBrowser:true});
-    let res;
-    try{
-      res=await client.messages.create({model:proxy?'claude-sonnet-5-5':model,max_tokens:12000,system,messages:[{role:'user',content}],output_config:{format:{type:'json_schema',schema}}});
-    }catch(e){
-      if(proxy&&(e.status===401||e.status===403))throw new Error('Mã truy cập sai, hoặc trang web này chưa được phép dùng AI.');
+  const mk=({key,code,proxy})=>proxy
+    ?new Anthropic({apiKey:'via-proxy',baseURL:proxy.replace(/\/$/,''),dangerouslyAllowBrowser:true,defaultHeaders:{'x-access-code':code||''}})
+    :new Anthropic({apiKey:key,dangerouslyAllowBrowser:true});
+  const call=async(o,params)=>{
+    try{return await mk(o).messages.create({...params,model:o.proxy?'claude-sonnet-5-5':o.model})}
+    catch(e){
+      if(o.proxy&&(e.status===401||e.status===403))throw new Error('Mã truy cập sai, hoặc trang web này chưa được phép dùng AI.');
       if(e.status===429)throw new Error('Quá nhiều yêu cầu, thử lại sau một phút.');
       throw e;
     }
+  };
+  const check=res=>{
     if(res.stop_reason==='refusal')throw new Error('Claude từ chối xử lý nội dung này.');
     if(res.stop_reason==='max_tokens')throw new Error('Kết quả bị cắt vì quá dài, thử file ngắn hơn.');
+  };
+  window.aiJSON=async(o)=>{
+    const res=await call(o,{max_tokens:12000,system:o.system,messages:[{role:'user',content:o.content}],output_config:{format:{type:'json_schema',schema:o.schema}}});
+    check(res);
     const t=res.content.find(b=>b.type==='text');
     if(!t)throw new Error('Claude không trả về nội dung.');
     return JSON.parse(t.text);
+  };
+  window.aiSearch=async(o)=>{
+    let messages=[{role:'user',content:o.prompt}],all=[],res;
+    for(let i=0;i<4;i++){
+      res=await call(o,{max_tokens:8000,system:o.system,messages,tools:[{type:'web_search_20260209',name:'web_search',max_uses:o.maxUses||4,user_location:{type:'approximate',country:'VN'}}]});
+      all.push(...res.content);
+      if(res.stop_reason!=='pause_turn')break;
+      messages=[...messages,{role:'assistant',content:res.content}];
+    }
+    check(res);
+    const text=all.filter(b=>b.type==='text').map(b=>b.text).join('\n').trim();
+    if(!text)throw new Error('Không có kết quả tìm kiếm.');
+    const urls=new Set();
+    all.forEach(b=>{
+      if(b.type==='web_search_tool_result'&&Array.isArray(b.content))b.content.forEach(x=>x.url&&urls.add(x.url));
+      if(b.type==='text'&&b.citations)b.citations.forEach(x=>x.url&&urls.add(x.url));
+    });
+    return {text,urls:[...urls]};
   };
 }catch(e){window.AI_ERR='Không tải được thư viện Claude (kiểm tra kết nối mạng): '+e.message}
 </script>

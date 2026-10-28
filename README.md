@@ -10,6 +10,7 @@ App là một file HTML duy nhất ([index.html](index.html)), không cần cài
 - Mọi ô đều không bắt buộc. Thiếu thông tin cứ để trống, bản kế hoạch đánh dấu phần còn thiếu để bổ sung sau.
 - Tự lưu trên trình duyệt. Có xuất và nạp file sao lưu (.json).
 - AI (Claude): nhập tự động từ brochure PDF, dán dữ liệu thô vào từng bước, gợi ý SWOT, chân dung, hành trình, thông điệp và mix kênh.
+- Hồ sơ đối thủ: điền tên, website, fanpage hoặc bất kỳ thông tin nào, bấm **AI tìm thông tin trên web** để Claude tìm phần còn lại (học phí, điểm mạnh, điểm yếu có nguồn) và ghi lại link nguồn. Chỉ điền ô còn trống, cần kiểm chứng.
 
 ## Dùng ngay trên web
 
@@ -43,7 +44,7 @@ npx wrangler deploy
 
 Lệnh cuối in ra địa chỉ dạng `https://imc-tuyensinh-ai.<tên>.workers.dev`. Điền địa chỉ đó vào `PROXY_URL` rồi đẩy lên GitHub.
 
-Máy chủ trung gian chỉ nhận lời gọi từ trang web trong `ALLOWED_ORIGINS` (`worker/wrangler.toml`), chỉ cho dùng mô hình Claude Sonnet 5.5, giới hạn độ dài trả lời, và từ chối mọi tham số khác (công cụ, streaming). Nên đặt hạn mức chi tiêu trong Anthropic Console để giới hạn thiệt hại nếu mã truy cập bị lộ. Đổi `ACCESS_CODE` bất cứ lúc nào để thu hồi quyền cũ.
+Máy chủ trung gian chỉ nhận lời gọi từ trang web trong `ALLOWED_ORIGINS` (`worker/wrangler.toml`), chỉ cho dùng mô hình Claude Sonnet 5.5, giới hạn độ dài trả lời, và từ chối mọi tham số khác. Công cụ duy nhất được phép là tìm kiếm web (tối đa 5 lượt mỗi lần gọi), dùng cho tính năng tìm đối thủ. Tính năng này cần bật Web search trong Anthropic Console (Settings, Privacy) và tính phí tìm kiếm riêng. Nên đặt hạn mức chi tiêu trong Anthropic Console để giới hạn thiệt hại nếu mã truy cập bị lộ. Đổi `ACCESS_CODE` bất cứ lúc nào để thu hồi quyền cũ.
 
 ## Quyền riêng tư và bảo mật
 

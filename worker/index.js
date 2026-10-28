@@ -2,7 +2,10 @@
 // Key nằm trong secret ANTHROPIC_API_KEY của Cloudflare, không bao giờ gửi xuống trình duyệt.
 
 const ALLOWED_MODELS = ['claude-sonnet-5-5'];
-const ALLOWED_FIELDS = ['model', 'max_tokens', 'system', 'messages', 'output_config'];
+const ALLOWED_FIELDS = ['model', 'max_tokens', 'system', 'messages', 'output_config', 'tools'];
+const SEARCH_TOOL = 'web_search_20260209';
+const MAX_SEARCHES = 5;
+const TOOL_KEYS = ['type', 'name', 'max_uses', 'user_location'];
 const MAX_TOKENS = 12000;
 const MAX_BODY_BYTES = 35 * 1024 * 1024;
 
@@ -49,6 +52,13 @@ export default {
     if (extra.length) return fail(400, 'Field not allowed: ' + extra.join(', '));
     if (!ALLOWED_MODELS.includes(body.model)) return fail(400, 'Model not allowed');
     if (!(body.max_tokens > 0 && body.max_tokens <= MAX_TOKENS)) return fail(400, 'max_tokens out of range');
+    if (body.tools !== undefined) {
+      const t = Array.isArray(body.tools) && body.tools.length === 1 ? body.tools[0] : null;
+      const ok = t && t.type === SEARCH_TOOL && t.name === 'web_search'
+        && t.max_uses > 0 && t.max_uses <= MAX_SEARCHES
+        && Object.keys(t).every(k => TOOL_KEYS.includes(k));
+      if (!ok) return fail(400, 'Only web_search with max_uses <= ' + MAX_SEARCHES + ' is allowed');
+    }
 
     const upstream = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
