@@ -75,6 +75,7 @@ dialog label{margin-top:12px}
 .btn:disabled{opacity:.55;cursor:wait}
 .aistat{font-size:12px;margin:0 6px;color:var(--mute)}
 .val{white-space:pre-wrap}
+label.btn{display:inline-block;margin:0;font-weight:400;font-size:13px}
 </style>
 </head>
 <body>
@@ -437,14 +438,36 @@ const PASTE={
     schema:obj({budget:intn,target:intn,last_year:intn,note:str}),
     apply:r=>{fillEmpty(()=>S.p.budget,v=>S.p.budget=String(v),r.budget);fillEmpty(()=>S.p.target,v=>S.p.target=String(v),r.target);fillEmpty(()=>S.p.lastYear,v=>S.p.lastYear=String(v),r.last_year);S.kpiNote=addText(S.kpiNote,r.note)}}
 };
-const pasteCard=k=>`<div class="card"><h3>Dán dữ liệu để AI tự điền</h3><p class="lead" style="margin-bottom:10px">${PASTE[k].hint}</p><textarea id="paste-${k}" placeholder="Dán nội dung vào đây…" style="min-height:90px"></textarea><div class="row" style="margin-top:8px"><button class="btn pri sm" data-paste="${k}">AI đọc và điền vào bước này</button><span class="saved">Chỉ thêm vào, không xoá phần bạn đã viết</span></div></div>`;
-async function runPaste(k,btn){
+const pasteCard=k=>`<div class="card"><h3>Dán dữ liệu để AI tự điền</h3><p class="lead" style="margin-bottom:10px">${PASTE[k].hint}</p><textarea id="paste-${k}" placeholder="Dán nội dung vào đây…" style="min-height:90px"></textarea><div class="row" style="margin-top:8px"><button class="btn pri sm" data-paste="${k}">AI đọc và điền vào bước này</button><label class="btn sm" title="Nhận .txt, .md, .csv, .json (nạp vào ô để bạn xem) hoặc .pdf (AI đọc luôn)">Nhập từ file<input type="file" data-pastefile="${k}" accept=".txt,.md,.csv,.tsv,.json,.pdf" hidden></label><span class="saved">Chỉ thêm vào, không xoá phần bạn đã viết</span></div></div>`;
+async function runPaste(k,btn,pdf){
   const text=document.getElementById('paste-'+k).value.trim();
-  if(!text)return alert('Dán nội dung vào ô trước.');
+  if(!text&&!pdf)return alert('Dán nội dung hoặc nhập file trước.');
   const old=btn.textContent;btn.disabled=true;btn.textContent='AI đang đọc…';
-  try{const r=await ai(PASTE[k].ask+'\n\nQuy tắc: chỉ lấy thông tin có trong văn bản, không suy đoán, không bịa số liệu.\n\nVĂN BẢN:\n'+text,PASTE[k].schema);PASTE[k].apply(r);save();render()}
-  catch(e){alert('Không gọi được AI: '+e.message);btn.disabled=false;btn.textContent=old}
+  try{
+    const ask=PASTE[k].ask+'\n\nQuy tắc: chỉ lấy thông tin có trong tài liệu, không suy đoán, không bịa số liệu.'+(text?'\n\nVĂN BẢN:\n'+text:'');
+    const content=pdf?[{type:'document',source:{type:'base64',media_type:'application/pdf',data:await b64(pdf)}},{type:'text',text:ask}]:ask;
+    const r=await ai(content,PASTE[k].schema);PASTE[k].apply(r);save();render()
+  }catch(e){alert('Không gọi được AI: '+e.message);btn.disabled=false;btn.textContent=old}
 }
+const readText=f=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result));r.onerror=()=>rej(new Error('Không đọc được file'));r.readAsText(f,'UTF-8')});
+document.addEventListener('change',async e=>{
+  const t=e.target,f=t.files&&t.files[0];
+  if(!f||!t.dataset)return;
+  const k=t.dataset.pastefile,tid=t.dataset.textfile||(k&&'paste-'+k);
+  if(!tid)return;
+  t.value='';
+  try{
+    if(f.name.toLowerCase().endsWith('.pdf')){
+      if(!k)return alert('Ô này chỉ nhận file văn bản. Với PDF hãy dùng nút Đọc brochure ở trên.');
+      if(f.size>30*1024*1024)return alert('File quá lớn (tối đa khoảng 30MB)');
+      return runPaste(k,document.querySelector(`[data-paste="${k}"]`),f);
+    }
+    if(f.size>500*1024)return alert('File văn bản quá lớn (tối đa 500KB). Hãy cắt bớt phần cần dùng.');
+    const txt=await readText(f),ta=document.getElementById(tid);
+    ta.value=(ta.value.trim()?ta.value.replace(/\s+$/,'')+'\n\n':'')+`--- ${f.name} ---\n`+txt;
+    ta.focus();
+  }catch(err){alert(err.message)}
+});
 
 // ---------- Nhập từ brochure PDF ----------
 let imp={items:[],busy:false};
@@ -472,7 +495,8 @@ function importCard(){
   <p class="lead" style="margin-bottom:12px">Tải brochure của trường mình hoặc của đối thủ. AI đọc và đề xuất điền vào hồ sơ. Bạn xem lại và chọn mục cần áp dụng. Mục nào brochure không có sẽ để trống, bổ sung sau.</p>
   <div class="row"><select id="improle" style="width:auto"><option value="own">Brochure trường mình</option><option value="comp">Brochure đối thủ</option></select>
   <input type="file" id="impfile" accept="application/pdf" multiple style="width:auto;max-width:260px"><button class="btn pri sm" data-impgo ${imp.busy?'disabled':''}>Đọc brochure</button><span id="implog" class="saved"></span></div>
-  <label style="margin-top:12px">Hoặc dán nội dung thô <span class="h">(từ website, fanpage, tài liệu…) theo vai trò đã chọn ở trên</span></label><textarea id="imptext" placeholder="Dán nội dung vào đây…" style="min-height:90px"></textarea>${items?`<div style="margin-top:12px">${items}</div>`:''}</div>`;
+  <label style="margin-top:12px">Hoặc dán nội dung thô <span class="h">(từ website, fanpage, tài liệu…) theo vai trò đã chọn ở trên</span></label><textarea id="imptext" placeholder="Dán nội dung vào đây…" style="min-height:90px"></textarea>
+  <div class="row" style="margin-top:6px"><label class="btn sm">Nhập từ file văn bản<input type="file" data-textfile="imptext" accept=".txt,.md,.csv,.tsv,.json" hidden></label><span class="saved">.txt, .md, .csv, .json được nạp vào ô để bạn xem trước khi đọc</span></div>${items?`<div style="margin-top:12px">${items}</div>`:''}</div>`;
 }
 function buildProposals(d,role){
   const out=[];
