@@ -618,7 +618,7 @@ try{
   window.aiSearch=async(o)=>{
     let messages=[{role:'user',content:o.prompt}],all=[],res;
     for(let i=0;i<4;i++){
-      res=await call(o,{max_tokens:8000,system:o.system,messages,tools:[{type:'web_search_20260209',name:'web_search',max_uses:o.maxUses||4,user_location:{type:'approximate',country:'VN'}}]});
+      res=await call(o,{max_tokens:8000,system:o.system,messages,tools:[{type:'web_search_20260209',name:'web_search',max_uses:o.maxUses||4}]});
       all.push(...res.content);
       if(res.stop_reason!=='pause_turn')break;
       messages=[...messages,{role:'assistant',content:res.content}];
