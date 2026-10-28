@@ -101,7 +101,7 @@ dialog label{margin-top:12px}
   <label for="akey">Anthropic API key</label>
   <input type="password" id="akey" placeholder="sk-ant-..." autocomplete="off">
   <label for="amodel">Mô hình</label>
-  <select id="amodel"><option value="claude-opus-5-5">Claude Opus 5.5 (chất lượng cao nhất)</option><option value="claude-sonnet-5-5">Claude Sonnet 5.5 (rẻ hơn, nhanh hơn)</option></select>
+  <select id="amodel"><option value="claude-sonnet-5-5">Claude Sonnet 5.5 (rẻ hơn, nhanh hơn)</option><option value="claude-opus-5-5">Claude Opus 5.5 (chất lượng cao nhất)</option></select>
   <p class="lead" style="margin:12px 0;font-size:13px">Key lưu trong trình duyệt của máy này, app gọi thẳng tới Anthropic. Không nên nhập key trên máy dùng chung. Khi nhập brochure, file PDF được gửi tới Anthropic để đọc.</p>
   <div class="row"><button class="btn pri" id="asave">Lưu</button><button class="btn" id="aclose">Đóng</button><span class="spacer"></span><button class="btn sm" id="aclear">Xoá key</button></div>
 </dialog>
@@ -372,7 +372,7 @@ document.getElementById('file').onchange=e=>{const f=e.target.files[0];if(!f)ret
 document.getElementById('reset').onclick=()=>{if(confirm('Xoá toàn bộ dữ liệu đã nhập? Nên xuất file sao lưu trước.')){S=blank();step=0;save();render()}};
 // ---------- AI ----------
 const SKEY='imc-ai-settings';
-const aiSet=()=>{const d={key:'',model:'claude-opus-5-5'};try{return Object.assign(d,JSON.parse(localStorage.getItem(SKEY)||'{}'))}catch(e){return d}};
+const aiSet=()=>{const d={key:'',model:'claude-sonnet-5-5'};try{return Object.assign(d,JSON.parse(localStorage.getItem(SKEY)||'{}'))}catch(e){return d}};
 const dlg=document.getElementById('dlg');
 function aiStatus(){document.getElementById('aistat').textContent=aiSet().key?'AI: đã có API key':'AI: chưa có API key'}
 function openSettings(){const s=aiSet();document.getElementById('akey').value=s.key;document.getElementById('amodel').value=s.model;if(!dlg.open)dlg.showModal()}
