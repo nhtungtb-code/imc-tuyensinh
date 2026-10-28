@@ -25,12 +25,32 @@ Bấm file **index.html**, chọn **Download raw file**, rồi bấm đúp file 
 
 - Muốn dùng AI: bấm **Cài đặt AI (API key)** và dán Anthropic API key của bạn.
 
+## Hai cách cấp AI
+
+1. **Mỗi người dùng API key riêng** (mặc định): bấm **Cài đặt AI (API key)** và dán key Anthropic của mình. Key lưu trong trình duyệt, app gọi thẳng tới Anthropic.
+2. **Đơn vị cấp AI chung** (khuyến nghị cho team): đặt key của đơn vị trên một máy chủ trung gian nhỏ (thư mục [worker](worker), chạy trên Cloudflare Workers). Người dùng chỉ nhập **mã truy cập** do quản trị viên phát, không cần và không thấy API key. Bật bằng cách điền địa chỉ máy chủ vào `PROXY_URL` đầu phần AI trong `index.html`.
+
+### Triển khai máy chủ trung gian (quản trị viên)
+
+Cần tài khoản Cloudflare (gói miễn phí đủ dùng) và Node.js. Chạy trong thư mục `worker`:
+
+```bash
+npx wrangler login
+npx wrangler secret put ANTHROPIC_API_KEY   # dán API key khi được hỏi
+npx wrangler secret put ACCESS_CODE         # đặt mã truy cập phát cho người dùng
+npx wrangler deploy
+```
+
+Lệnh cuối in ra địa chỉ dạng `https://imc-tuyensinh-ai.<tên>.workers.dev`. Điền địa chỉ đó vào `PROXY_URL` rồi đẩy lên GitHub.
+
+Máy chủ trung gian chỉ nhận lời gọi từ trang web trong `ALLOWED_ORIGINS` (`worker/wrangler.toml`), chỉ cho dùng mô hình Claude Sonnet 5.5, giới hạn độ dài trả lời, và từ chối mọi tham số khác (công cụ, streaming). Nên đặt hạn mức chi tiêu trong Anthropic Console để giới hạn thiệt hại nếu mã truy cập bị lộ. Đổi `ACCESS_CODE` bất cứ lúc nào để thu hồi quyền cũ.
+
 ## Quyền riêng tư và bảo mật
 
-- Dữ liệu kế hoạch và API key lưu trong trình duyệt của từng máy (localStorage). Không có server nào của dự án này lưu dữ liệu.
-- Khi dùng AI, nội dung bạn nhập hoặc file PDF được gửi thẳng từ trình duyệt tới Anthropic. Không dùng tài liệu nội bộ chưa được phép chia sẻ.
-- Không nhập API key trên máy dùng chung. Mỗi người dùng key của mình.
-- Key nằm trong trình duyệt nên không phù hợp cho triển khai nhiều người dùng chung một key. Khi đó cần một server trung gian giữ key.
+- Dữ liệu kế hoạch lưu trong trình duyệt của từng máy (localStorage). Không có server nào lưu dữ liệu kế hoạch.
+- Khi dùng AI, nội dung bạn nhập hoặc file PDF được gửi tới Anthropic. Ở chế độ 1 gửi thẳng; ở chế độ 2 đi qua máy chủ trung gian của đơn vị (mã nguồn không ghi log nội dung). Không dùng tài liệu mật.
+- Không bao giờ đưa API key vào mã nguồn hay repo. Chế độ 2 giữ key ở secret của Cloudflare.
+- Chế độ 1: không nhập key trên máy dùng chung.
 
 ## Phụ thuộc bên ngoài
 

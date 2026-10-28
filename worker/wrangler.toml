@@ -1,0 +1,11 @@
+name = "imc-tuyensinh-ai"
+main = "index.js"
+compatibility_date = "2025-01-01"
+
+[vars]
+# Các trang web được phép gọi máy chủ này, ngăn cách bằng dấu phẩy
+ALLOWED_ORIGINS = "https://nhtungtb-code.github.io"
+
+# Secret (đặt bằng lệnh `npx wrangler secret put`, không ghi vào file này):
+#   ANTHROPIC_API_KEY  API key Anthropic của bạn
+#   ACCESS_CODE        mã truy cập bạn phát cho người dùng

@@ -99,12 +99,19 @@ label.btn{display:inline-block;margin:0;font-weight:400;font-size:13px}
 </div>
 <dialog id="dlg">
   <h3 style="margin:0 0 4px;font-family:Lora,Georgia,serif;color:var(--navy)">Cài đặt AI</h3>
-  <label for="akey">Anthropic API key</label>
-  <input type="password" id="akey" placeholder="sk-ant-..." autocomplete="off">
-  <label for="amodel">Mô hình</label>
-  <select id="amodel"><option value="claude-sonnet-5-5">Claude Sonnet 5.5 (rẻ hơn, nhanh hơn)</option><option value="claude-opus-5-5">Claude Opus 5.5 (chất lượng cao nhất)</option></select>
-  <p class="lead" style="margin:12px 0;font-size:13px">Key lưu trong trình duyệt của máy này, app gọi thẳng tới Anthropic. Không nên nhập key trên máy dùng chung. Khi nhập brochure, file PDF được gửi tới Anthropic để đọc.</p>
-  <div class="row"><button class="btn pri" id="asave">Lưu</button><button class="btn" id="aclose">Đóng</button><span class="spacer"></span><button class="btn sm" id="aclear">Xoá key</button></div>
+  <div id="ownkey">
+    <label for="akey">Anthropic API key</label>
+    <input type="password" id="akey" placeholder="sk-ant-..." autocomplete="off">
+    <label for="amodel">Mô hình</label>
+    <select id="amodel"><option value="claude-sonnet-5-5">Claude Sonnet 5.5 (rẻ hơn, nhanh hơn)</option><option value="claude-opus-5-5">Claude Opus 5.5 (chất lượng cao nhất)</option></select>
+    <p class="lead" style="margin:12px 0;font-size:13px">Key lưu trong trình duyệt của máy này, app gọi thẳng tới Anthropic. Không nên nhập key trên máy dùng chung. Khi nhập brochure, file PDF được gửi tới Anthropic để đọc.</p>
+  </div>
+  <div id="codebox" hidden>
+    <label for="acode">Mã truy cập AI</label>
+    <input type="password" id="acode" placeholder="Mã do quản trị viên cấp" autocomplete="off">
+    <p class="lead" style="margin:12px 0;font-size:13px">AI do đơn vị cung cấp, bạn không cần API key riêng. Nội dung bạn nhập và file PDF được gửi qua máy chủ của đơn vị tới Anthropic để xử lý. Không dùng tài liệu mật.</p>
+  </div>
+  <div class="row"><button class="btn pri" id="asave">Lưu</button><button class="btn" id="aclose">Đóng</button><span class="spacer"></span><button class="btn sm" id="aclear">Xoá</button></div>
 </dialog>
 <script>
 const KEY = 'imc-tuyensinh-v1';
@@ -373,22 +380,37 @@ document.getElementById('file').onchange=e=>{const f=e.target.files[0];if(!f)ret
 document.getElementById('reset').onclick=()=>{if(confirm('Xoá toàn bộ dữ liệu đã nhập? Nên xuất file sao lưu trước.')){S=blank();step=0;save();render()}};
 // ---------- AI ----------
 const SKEY='imc-ai-settings';
-const aiSet=()=>{const d={key:'',model:'claude-sonnet-5-5'};try{return Object.assign(d,JSON.parse(localStorage.getItem(SKEY)||'{}'))}catch(e){return d}};
+const aiSet=()=>{const d={key:'',model:'claude-sonnet-5-5',code:''};try{return Object.assign(d,JSON.parse(localStorage.getItem(SKEY)||'{}'))}catch(e){return d}};
+// Điền địa chỉ máy chủ trung gian (thư mục worker/) để dùng AI của đơn vị, người dùng không cần API key riêng.
+// Để trống thì mỗi người dùng nhập API key của mình.
+const PROXY_URL='';
+const PROXY_NEEDS_CODE=true;
 const dlg=document.getElementById('dlg');
-function aiStatus(){document.getElementById('aistat').textContent=aiSet().key?'AI: đã có API key':'AI: chưa có API key'}
-function openSettings(){const s=aiSet();document.getElementById('akey').value=s.key;document.getElementById('amodel').value=s.model;if(!dlg.open)dlg.showModal()}
+function aiStatus(){
+  const s=aiSet(),b=document.getElementById('aibtn');
+  b.hidden=!!PROXY_URL&&!PROXY_NEEDS_CODE;
+  b.textContent=PROXY_URL?'Nhập mã truy cập AI':'Cài đặt AI (API key)';
+  document.getElementById('aistat').textContent=PROXY_URL?(PROXY_NEEDS_CODE?(s.code?'AI: đã nhập mã truy cập':'AI: cần mã truy cập'):'AI: sẵn sàng'):(s.key?'AI: đã có API key':'AI: chưa có API key');
+}
+function openSettings(){
+  const s=aiSet();
+  document.getElementById('ownkey').hidden=!!PROXY_URL;document.getElementById('codebox').hidden=!PROXY_URL;
+  document.getElementById('akey').value=s.key;document.getElementById('amodel').value=s.model;document.getElementById('acode').value=s.code;
+  if(!dlg.open)dlg.showModal();
+}
 document.getElementById('aibtn').onclick=openSettings;
 document.getElementById('aclose').onclick=()=>dlg.close();
-document.getElementById('asave').onclick=()=>{try{localStorage.setItem(SKEY,JSON.stringify({key:document.getElementById('akey').value.trim(),model:document.getElementById('amodel').value}))}catch(e){alert('Không lưu được cài đặt trên trình duyệt này')}aiStatus();dlg.close()};
-document.getElementById('aclear').onclick=()=>{try{localStorage.removeItem(SKEY)}catch(e){}document.getElementById('akey').value='';aiStatus()};
+document.getElementById('asave').onclick=()=>{try{localStorage.setItem(SKEY,JSON.stringify({key:document.getElementById('akey').value.trim(),model:document.getElementById('amodel').value,code:document.getElementById('acode').value.trim()}))}catch(e){alert('Không lưu được cài đặt trên trình duyệt này')}aiStatus();dlg.close()};
+document.getElementById('aclear').onclick=()=>{try{localStorage.removeItem(SKEY)}catch(e){}document.getElementById('akey').value='';document.getElementById('acode').value='';aiStatus()};
 aiStatus();
 
 const SYS='Bạn là chuyên gia marketing tuyển sinh giáo dục tại Việt Nam, giúp leader marketing của trường lập chiến lược IMC. Quy tắc: viết tiếng Việt, ngắn gọn, cụ thể, bám đúng dữ kiện được cung cấp. Không bịa số liệu, giải thưởng, tên người hay cam kết. Chỗ nào chỉ là giả định thì ghi "(giả định)". Thiếu dữ kiện thì để trống hoặc null thay vì đoán.';
 async function ai(content,schema){
   const s=aiSet();
-  if(!s.key){openSettings();throw new Error('Chưa có API key. Hãy nhập key trong hộp Cài đặt AI.')}
+  if(PROXY_URL){if(PROXY_NEEDS_CODE&&!s.code){openSettings();throw new Error('Chưa nhập mã truy cập AI.')}}
+  else if(!s.key){openSettings();throw new Error('Chưa có API key. Hãy nhập key trong hộp Cài đặt AI.')}
   if(!window.aiJSON) throw new Error(window.AI_ERR||'Thư viện Claude chưa tải xong, thử lại sau vài giây (cần có mạng).');
-  return window.aiJSON({key:s.key,model:s.model,system:SYS,content,schema});
+  return window.aiJSON({key:s.key,model:s.model,code:s.code,proxy:PROXY_URL,system:SYS,content,schema});
 }
 const str={type:'string'}, strn={type:['string','null']}, intn={type:['integer','null']};
 const obj=props=>({type:'object',properties:props,required:Object.keys(props),additionalProperties:false});
@@ -543,9 +565,18 @@ render();
 <script type="module">
 try{
   const {default:Anthropic}=await import('https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@1.3.0/+esm');
-  window.aiJSON=async({key,model,system,content,schema})=>{
-    const client=new Anthropic({apiKey:key,dangerouslyAllowBrowser:true});
-    const res=await client.messages.create({model,max_tokens:12000,system,messages:[{role:'user',content}],output_config:{format:{type:'json_schema',schema}}});
+  window.aiJSON=async({key,model,code,proxy,system,content,schema})=>{
+    const client=proxy
+      ?new Anthropic({apiKey:'via-proxy',baseURL:proxy.replace(/\/$/,''),dangerouslyAllowBrowser:true,defaultHeaders:{'x-access-code':code||''}})
+      :new Anthropic({apiKey:key,dangerouslyAllowBrowser:true});
+    let res;
+    try{
+      res=await client.messages.create({model:proxy?'claude-sonnet-5-5':model,max_tokens:12000,system,messages:[{role:'user',content}],output_config:{format:{type:'json_schema',schema}}});
+    }catch(e){
+      if(proxy&&(e.status===401||e.status===403))throw new Error('Mã truy cập sai, hoặc trang web này chưa được phép dùng AI.');
+      if(e.status===429)throw new Error('Quá nhiều yêu cầu, thử lại sau một phút.');
+      throw e;
+    }
     if(res.stop_reason==='refusal')throw new Error('Claude từ chối xử lý nội dung này.');
     if(res.stop_reason==='max_tokens')throw new Error('Kết quả bị cắt vì quá dài, thử file ngắn hơn.');
     const t=res.content.find(b=>b.type==='text');
